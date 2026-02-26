@@ -81,6 +81,52 @@ async function migrateData(csvPath) {
               [treatment.code, treatment.description, treatment.cost]
             );
           }
+          // Insert appointments with foreign keys
+for (let row of appointments) {
+
+  const patientResult = await pool.query(
+    "SELECT id FROM patients WHERE email = $1",
+    [row.patient_email.toLowerCase()]
+  );
+
+  const doctorResult = await pool.query(
+    "SELECT id FROM doctors WHERE email = $1",
+    [row.doctor_email.toLowerCase()]
+  );
+
+  const insuranceResult = await pool.query(
+    "SELECT id FROM insurances WHERE name = $1",
+    [row.insurance_provider]
+  );
+
+  const treatmentResult = await pool.query(
+    "SELECT id FROM treatments WHERE code = $1",
+    [row.treatment_code]
+  );
+
+  if (
+    patientResult.rows.length &&
+    doctorResult.rows.length &&
+    insuranceResult.rows.length &&
+    treatmentResult.rows.length
+  ) {
+    await pool.query(
+      `INSERT INTO appointments
+       (appointment_id, appointment_date, patient_id, doctor_id, insurance_id, treatment_id, amount_paid)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       ON CONFLICT (appointment_id) DO NOTHING`,
+      [
+        row.appointment_id,
+        row.appointment_date,
+        patientResult.rows[0].id,
+        doctorResult.rows[0].id,
+        insuranceResult.rows[0].id,
+        treatmentResult.rows[0].id,
+        parseFloat(row.amount_paid)
+      ]
+    );
+  }
+}
 
           resolve({
             patients: patientsMap.size,
