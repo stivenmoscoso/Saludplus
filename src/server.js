@@ -5,6 +5,8 @@ const simulacroRoutes = require("./routes/simulacro");
 const app = express();
 const analyticsRoutes = require("./routes/analytics");
 app.use("/api/analytics", analyticsRoutes);
+const patientsRoutes = require("./routes/patients");
+app.use("/api/patients", patientsRoutes);
 
 app.use(express.json());
 app.use("/api/simulacro", simulacroRoutes);
