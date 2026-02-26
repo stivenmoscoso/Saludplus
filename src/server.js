@@ -3,6 +3,8 @@ const pool = require("./config/postgres");
 const connectMongo = require("./config/mongodb");
 const simulacroRoutes = require("./routes/simulacro");
 const app = express();
+const analyticsRoutes = require("./routes/analytics");
+app.use("/api/analytics", analyticsRoutes);
 
 app.use(express.json());
 app.use("/api/simulacro", simulacroRoutes);
