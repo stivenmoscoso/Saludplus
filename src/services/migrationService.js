@@ -128,6 +128,65 @@ for (let row of appointments) {
   }
 }
 
+//MONGO DATOS HISTORICOS
+
+
+const mongoDb = await connectMongo();
+const historyCollection = mongoDb.collection("patient_history");
+
+// Clear previous documents (for testing)
+await historyCollection.deleteMany({});
+
+// Get complete relational data
+const fullData = await pool.query(`
+  SELECT 
+    p.id as patient_id,
+    p.name as patient_name,
+    p.email as patient_email,
+    a.appointment_date,
+    d.name as doctor_name,
+    d.specialty,
+    t.description as treatment_description,
+    t.cost,
+    i.name as insurance_name,
+    a.amount_paid
+  FROM appointments a
+  JOIN patients p ON a.patient_id = p.id
+  JOIN doctors d ON a.doctor_id = d.id
+  JOIN treatments t ON a.treatment_id = t.id
+  JOIN insurances i ON a.insurance_id = i.id
+  ORDER BY p.id
+`);
+
+const patientMap = new Map();
+
+for (let row of fullData.rows) {
+
+  if (!patientMap.has(row.patient_id)) {
+    patientMap.set(row.patient_id, {
+      patient_id: row.patient_id,
+      name: row.patient_name,
+      email: row.patient_email,
+      history: []
+    });
+  }
+
+  patientMap.get(row.patient_id).history.push({
+    date: row.appointment_date,
+    doctor: row.doctor_name,
+    specialty: row.specialty,
+    treatment: row.treatment_description,
+    cost: row.cost,
+    insurance: row.insurance_name,
+    amount_paid: row.amount_paid
+  });
+}
+
+// Insert documents into Mongo
+for (let patient of patientMap.values()) {
+  await historyCollection.insertOne(patient);
+}
+
           resolve({
             patients: patientsMap.size,
             doctors: doctorsMap.size,
