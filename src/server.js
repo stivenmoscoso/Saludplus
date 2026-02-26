@@ -1,8 +1,12 @@
 const express = require("express");
 const pool = require("./config/postgres");
 const connectMongo = require("./config/mongodb");
-
+const simulacroRoutes = require("./routes/simulacro");
 const app = express();
+
+app.use(express.json());
+app.use("/api/simulacro", simulacroRoutes);
+
 
 app.get("/", async (req, res) => {
   try {
@@ -20,6 +24,6 @@ app.get("/", async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
+app.listen(3000, "0.0.0.0", () => {
   console.log("Servidor corriendo en puerto 3000");
 });
